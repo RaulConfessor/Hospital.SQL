@@ -25,9 +25,7 @@ CREATE TABLE CONTATO(
 	TIPO ENUM('RES','TEL','COM') NOT NULL,
 	NUMERO VARCHAR(20) NOT NULL,
 	ID_PACIENTE INT
-);
-
-+-------------+-------------------------+------+-----+---------+----------------+
+);----------+-------------------------+------+-----+---------+----------------+
 | Field       | Type                    | Null | Key | Default | Extra          |
 +-------------+-------------------------+------+-----+---------+----------------+
 | IDCONTATO   | int(11)                 | NO   | PRI | NULL    | auto_increment |
@@ -92,9 +90,9 @@ CREATE TABLE HOSPITAL(
 
 CREATE TABLE CONSULTA(
 	IDCONSULTA INT PRIMARY KEY AUTO_INCREMENT,
-	ID_PACINTE INT NOT NULL UNIQUE,
-	ID_MEDICO INT NOT NULL UNIQUE,
-	ID_HOSPITAL INT NOT NULL UNIQUE,
+	ID_PACINTE INT NOT NULL,
+	ID_MEDICO INT NOT NULL,
+	ID_HOSPITAL INT NOT NULL,
 	DATA DATETIME,
 	DIAGNOSTICO VARCHAR(50)
 );
@@ -140,9 +138,57 @@ CREATE TABLE INTERNACAO(
 ALTER TABLE INTERNACAO ADD CONSTRAINT FK_INTERNACAO_CONSULTA
 FOREIGN KEY(ID_CONSULTA) REFERENCES CONSULTA(IDCONSULTA);
 
-INSERT INTO PACIENTE (NOME, CPF, SEXO, NASCIMENTO) VALUES
-    ('João Silva', '123.456.789-01', 'M', '1990-05-15'),
-    ('Maria Oliveira', '987.654.321-02', 'F', '1985-08-22'),
-    ('Carlos Souza', '456.789.012-03', 'M', '1995-03-10'),
-    ('Ana Pereira', '789.012.345-04', 'F', '1980-11-27'),
-    ('Pedro Santos', '234.567.890-05', 'M', '2000-07-08');
+
+
+SELECT IDPACIENTE, NOME, CPF, NASCIMENTO, NUMERO, TIPO
+FROM PACIENTE
+INNER JOIN CONTATO
+ON IDPACIENTE = ID_PACIENTE;
+
++------------+----------------+----------------+------------+-----------+------+
+| IDPACIENTE | NOME           | CPF            | NASCIMENTO | NUMERO    | TIPO |
++------------+----------------+----------------+------------+-----------+------+
+|          1 | João Silva     | 123.456.789-01 | 1990-05-15 | 1234-5678 | RES  |
+|          2 | Maria Oliveira | 987.654.321-02 | 1985-08-22 | 9876-5432 | TEL  |
+|          2 | Maria Oliveira | 987.654.321-02 | 1985-08-22 | 555-1234  | TEL  |
+|          3 | Carlos Souza   | 456.789.012-03 | 1995-03-10 | 555-1234  | COM  |
+|          3 | Carlos Souza   | 456.789.012-03 | 1995-03-10 | 8888-9999 | TEL  |
+|          4 | Ana Pereira    | 789.012.345-04 | 1980-11-27 | 8888-9999 | RES  |
+|          5 | Pedro Santos   | 234.567.890-05 | 2000-07-08 | 4444-3333 | COM  |
++------------+----------------+----------------+------------+-----------+------+
+
+SELECT IDPACIENTE, P.NOME,M.NOME AS MEDICO,H.NOME AS HOSPITAL, DIAGNOSTICO, IFNULL(ENTRADA, '-----') AS INTERACAO
+FROM CONSULTA
+INNER JOIN PACIENTE P 
+ON IDPACIENTE = ID_PACINTE
+INNER JOIN MEDICO M 
+ON IDMEDICO = ID_MEDICO
+INNER JOIN HOSPITAL H
+ON IDHOSPITAL = ID_HOSPITAL
+LEFT JOIN INTERNACAO
+ON IDCONSULTA = ID_CONSULTA;
+
++------------+----------------+--------------+--------------------+--------------------+---------------------+
+| IDPACIENTE | NOME           | MEDICO       | HOSPITAL           | DIAGNOSTICO        | INTERACAO           |
++------------+----------------+--------------+--------------------+--------------------+---------------------+
+|          1 | João Silva     | Dr. Silva    | Hospital Central   | Nova consulta      | -----               |
+|          1 | João Silva     | Dr. Silva    | Hospital Central   | Consulta de rotina | -----               |
+|          2 | Maria Oliveira | Dra. Santos  | Hospital Regional  | Dor no joelho      | 2024-02-15 08:30:00 |
+|          3 | Carlos Souza   | Dr. Oliveira | Hospital Municipal | Exame de sangue    | -----               |
+|          4 | Ana Pereira    | Dra. Pereira | Hospital Municipal | Vacinação          | -----               |
++------------+----------------+--------------+--------------------+--------------------+---------------------+
+
+SELECT IDPACIENTE, P.NOME, H.NOME, ESTADO
+FROM CONSULTA
+INNER JOIN PACIENTE P 
+ON IDPACIENTE = ID_PACINTE
+INNER JOIN HOSPITAL H 
+ON IDHOSPITAL = ID_HOSPITAL
+WHERE ESTADO = 'MG';
+
++------------+--------------+--------------------+--------+
+| IDPACIENTE | NOME         | NOME               | ESTADO |
++------------+--------------+--------------------+--------+
+|          3 | Carlos Souza | Hospital Municipal | MG     |
+|          4 | Ana Pereira  | Hospital Municipal | MG     |
++------------+--------------+--------------------+--------+
